@@ -36,7 +36,8 @@ while True:
         if not gameRunning:
             gameRunning = True
             # TODO actually start the game
-            Game()
+            Game().run()
+
             print("started game script")
 
 

@@ -3,17 +3,14 @@ import datetime
 import MySQLdb
 import os
 import signal
-import subprocess
 import RPi.GPIO as GPIO
+from guizero import App
 
 db = MySQLdb.connect(host="dlw-hackathon.westeurope.cloudapp.azure.com", user="hackathon", passwd="Delaware.2011",
                      db="hackathon")
-proc = subprocess.Popen(
-    "python3 alive.py3",
-    stderr=subprocess.STDOUT,  # Merge stdout and stderr
-    stdout=subprocess.PIPE,
-    shell=True,
-    preexec_fn=os.setsid)
+
+app = App(bg = "green", width=1920, height=1080)
+
 #create a cursor for the select
 cur = db.cursor()
 
@@ -82,14 +79,7 @@ while(True):
             isShot = compare(arr)
 
             if isShot:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                print(proc)
-                proc = subprocess.Popen(
-                    "python3 dead.py3",
-                    stderr=subprocess.STDOUT,  # Merge stdout and stderr
-                    stdout=subprocess.PIPE,
-                    shell=True,
-                    preexec_fn=os.setsid)
+                app.bg = "red"
                 try:
                     file = open('ReadIR/currentGame.txt','r')
                     newId = file.read()
@@ -109,14 +99,8 @@ while(True):
                 print('I\'ve been shot! Inactive for 10 seconds!');
                 time.sleep(10);
                 print('I am active! Please, don\'t shoot me, I\'m only the Pi(ano player)!');
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                proc = subprocess.Popen(
-                    "python3 alive.py3",
-                    stderr=subprocess.STDOUT,  # Merge stdout and stderr
-                    stdout=subprocess.PIPE,
-                    shell=True,
-                    preexec_fn=os.setsid)
 
+            app.bg = "green"
             print(isShot)
             counter = 0
             largenumberseen = False

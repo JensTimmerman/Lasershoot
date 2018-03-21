@@ -3,137 +3,123 @@ import datetime
 import MySQLdb
 import os
 import signal
-import subprocess
 import RPi.GPIO as GPIO
+from guizero import App
+
+app = App(bg="green")
 
 db = MySQLdb.connect(host="dlw-hackathon.westeurope.cloudapp.azure.com", user="hackathon",
                      passwd="Delaware.2011", db="hackathon")
-proc = subprocess.Popen(
-    "python3 alive.py3",
-    stderr=subprocess.STDOUT,  # Merge stdout and stderr
-    stdout=subprocess.PIPE,
-    shell=True,
-    preexec_fn=os.setsid)
+
 #create a cursor for the select
 cur = db.cursor()
 
-target = [100000, 801.0, 1784.0, 833.0, 592.0, 244.0, 596.0, 237.0, 601.0, 239.0, 341.0]
-result = [True] * 9
-percentage = 0.30
+class Game:
+    def __init__(self):
+        target = [100000, 801.0, 1784.0, 833.0, 592.0, 244.0, 596.0, 237.0, 601.0, 239.0, 341.0]
+        result = [True] * 9
+        percentage = 0.30
 
-diffList = [0.0] * 10
-def compare(arr):
+        diffList = [0.0] * 10
+        def compare(arr):
 
-    ok = True
-    for i in range(1,9):
-        arr[i] = (target[1] / arr[1]) * arr[i]
-        diffList[i] = abs(target[i] - arr[i])
-        result[i-1] = abs(target[i] - arr[i]) <= percentage * target[i]
-        if(not (abs(target[i] - arr[i]) <= percentage * target[i])):
-            ok = False
-            break
+            ok = True
+            for i in range(1,9):
+                arr[i] = (target[1] / arr[1]) * arr[i]
+                diffList[i] = abs(target[i] - arr[i])
+                result[i-1] = abs(target[i] - arr[i]) <= percentage * target[i]
+                if(not (abs(target[i] - arr[i]) <= percentage * target[i])):
+                    ok = False
+                    break
 
-    print((arr[1:9]))
-    print(diffList)
-    print(result)
-    print('\n')
+            print((arr[1:9]))
+            print(diffList)
+            print(result)
+            print('\n')
 
-    return ok
+            return ok
 
-power = 7
-buzzer = 23
-ir = 21
+        power = 7
+        buzzer = 23
+        ir = 21
 
-GPIO.setmode(GPIO.BOARD)
-GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setwarnings(False)
 
-GPIO.setup(power,GPIO.OUT)
-GPIO.output(power,GPIO.HIGH)
+        GPIO.setup(power,GPIO.OUT)
+        GPIO.output(power,GPIO.HIGH)
 
-GPIO.setup(buzzer,GPIO.OUT)
-GPIO.output(buzzer,GPIO.HIGH)
+        GPIO.setup(buzzer,GPIO.OUT)
+        GPIO.output(buzzer,GPIO.HIGH)
 
-GPIO.setup(ir,GPIO.IN)
-
-
+        GPIO.setup(ir,GPIO.IN)
 
 
-f = open('team2.csv', 'a')
-f.write('\n')
-lastread = 0
-lasttime = time.time()
-counter = 0
-largenumberseen = False
-counterWritten = 0
-arr = [0] * 11
-isShot = False
 
-while(True):
-    newlastread = GPIO.input(ir)
-    if newlastread != lastread:
-        if counter > 50000:
-            largenumberseen = not largenumberseen
-        if largenumberseen and counterWritten < 11:
-            arr[counterWritten] = counter;
-            counterWritten = counterWritten + 1
 
-            #print(str(lastread) + " / " + str(counter))
-            #f.write(str(counter) + '\t')
+        f = open('team2.csv', 'a')
+        f.write('\n')
+        lastread = 0
+        lasttime = time.time()
+        counter = 0
+        largenumberseen = False
+        counterWritten = 0
+        arr = [0] * 11
+        isShot = False
 
-        if counterWritten == 11:
-            counterWritten = 0
-            isShot = compare(arr)
+        while(True):
+            newlastread = GPIO.input(ir)
+            if newlastread != lastread:
+                if counter > 50000:
+                    largenumberseen = not largenumberseen
+                if largenumberseen and counterWritten < 11:
+                    arr[counterWritten] = counter;
+                    counterWritten = counterWritten + 1
 
-            if isShot:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                print(proc)
-                proc = subprocess.Popen(
-                    "python3 dead.py3",
-                    stderr=subprocess.STDOUT,  # Merge stdout and stderr
-                    stdout=subprocess.PIPE,
-                    shell=True,
-                    preexec_fn=os.setsid)
-                try:
-                    file = open('ReadIR/currentGame.txt','r')
-                    newId = file.read()
-                    print(newId)
-                    file.close()
-                    file = open('piid','r')
-                    piid = file.read()
-                    file.close()
-                    ts = time.time()
-                    timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-                    cur.execute("""INSERT INTO hackathon.scores (game, timestamp, idpi) VALUES (%s, %s, %s)""",
-                                (newId, timestamp, piid))
-                    db.commit()
-                except Exception as e:
-                    print("error: ", str(e))
-                    db.rollback()
-                print('I\'ve been shot! Inactive for 10 seconds!');
-                time.sleep(10);
-                print('I am active! Please, don\'t shoot me, I\'m only the Pi(ano player)!');
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                proc = subprocess.Popen(
-                    "python3 alive.py3",
-                    stderr=subprocess.STDOUT,  # Merge stdout and stderr
-                    stdout=subprocess.PIPE,
-                    shell=True,
-                    preexec_fn=os.setsid)
+                    #print(str(lastread) + " / " + str(counter))
+                    #f.write(str(counter) + '\t')
 
-            print(isShot)
-            counter = 0
-            largenumberseen = False
-            counterWritten = 0
-            arr = [0] * 11
-        else:
+                if counterWritten == 11:
+                    counterWritten = 0
+                    isShot = compare(arr)
 
-            counter = 0
-            lastread = newlastread
-            newlasttime = time.time()
-            diff = (newlasttime - lasttime)*1000
-        #if diff > 5.5 and diff < 6.5:
-        #print((newlasttime-lasttime)*1000)
-            lasttime = newlasttime
+                    if isShot:
+                        app.bg = "red"
+                        try:
+                            file = open('ReadIR/currentGame.txt','r')
+                            newId = file.read()
+                            print(newId)
+                            file.close()
+                            file = open('piid','r')
+                            piid = file.read()
+                            file.close()
+                            ts = time.time()
+                            timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+                            cur.execute("""INSERT INTO hackathon.scores (game, timestamp, idpi) VALUES (%s, %s, %s)""",
+                                        (newId, timestamp, piid))
+                            db.commit()
+                        except Exception as e:
+                            print("error: ", str(e))
+                            db.rollback()
+                        print('I\'ve been shot! Inactive for 10 seconds!');
+                        time.sleep(10);
+                        print('I am active! Please, don\'t shoot me, I\'m only the Pi(ano player)!');
+                    app.bg = "green"
 
-    else:
-        counter = counter + 1
+                    print(isShot)
+                    counter = 0
+                    largenumberseen = False
+                    counterWritten = 0
+                    arr = [0] * 11
+                else:
+
+                    counter = 0
+                    lastread = newlastread
+                    newlasttime = time.time()
+                    diff = (newlasttime - lasttime)*1000
+                #if diff > 5.5 and diff < 6.5:
+                #print((newlasttime-lasttime)*1000)
+                    lasttime = newlasttime
+
+            else:
+                counter = counter + 1

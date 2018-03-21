@@ -2,7 +2,7 @@ import MySQLdb
 import time
 import os
 import signal
-import subprocess
+from theactualgame import Game
 
 db = MySQLdb.connect(host="dlw-hackathon.westeurope.cloudapp.azure.com", user="hackathon", passwd="Delaware.2011",
                      db="hackathon")
@@ -36,13 +36,7 @@ while True:
         if not gameRunning:
             gameRunning = True
             # TODO actually start the game
-            os.system("echo " + str(row[0]) +" > currentGame.txt")
-            proc = subprocess.Popen(
-                "python theActualGame.py",
-                stderr=subprocess.STDOUT,  # Merge stdout and stderr
-                stdout=subprocess.PIPE,
-                shell=True,
-                preexec_fn=os.setsid)
+            Game()
             print("started game script")
 
 

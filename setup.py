@@ -25,7 +25,7 @@ setup(
         'guizero',
         'mysqlclient',
         'flask',
-#        'RPi.GPIO',
+        'RPi.GPIO',
     ],
     tests_require=[
         'prospector',

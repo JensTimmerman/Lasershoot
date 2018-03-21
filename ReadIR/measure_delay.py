@@ -1,8 +1,6 @@
 import time
 import datetime
 import MySQLdb
-import os
-import signal
 import RPi.GPIO as GPIO
 from guizero import App
 
